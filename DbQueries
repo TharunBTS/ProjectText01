@@ -1,0 +1,89 @@
+-- create database
+CREATE DATABASE quiz_portal CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE quiz_portal;
+
+-- Admins table
+CREATE TABLE admins (
+  admin_id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  name VARCHAR(150),
+  email VARCHAR(150)
+);
+
+-- Users table (normal users)
+CREATE TABLE users (
+  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  name VARCHAR(150),
+  email VARCHAR(150),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Questions table
+CREATE TABLE questions (
+  question_id INT AUTO_INCREMENT PRIMARY KEY,
+  question_text TEXT NOT NULL,
+  option_a VARCHAR(255) NOT NULL,
+  option_b VARCHAR(255) NOT NULL,
+  option_c VARCHAR(255),
+  option_d VARCHAR(255),
+  correct_option CHAR(1) NOT NULL, -- 'A','B','C','D'
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Quizzes table
+CREATE TABLE quizzes (
+  quiz_id INT AUTO_INCREMENT PRIMARY KEY,
+  quiz_name VARCHAR(255) NOT NULL,
+  created_by_admin INT,
+  published BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by_admin) REFERENCES admins(admin_id) ON DELETE SET NULL
+);
+
+-- Mapping quiz -> questions (many-to-many)
+CREATE TABLE quiz_questions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  quiz_id INT NOT NULL,
+  question_id INT NOT NULL,
+  question_order INT DEFAULT 0,
+  FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE,
+  FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
+);
+
+-- Attempts table (one row per user quiz attempt)
+CREATE TABLE attempts (
+  attempt_id INT AUTO_INCREMENT PRIMARY KEY,
+  quiz_id INT NOT NULL,
+  user_id INT NOT NULL,
+  score INT DEFAULT 0,
+  total_questions INT DEFAULT 0,
+  started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  finished_at TIMESTAMP NULL,
+  FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Answers per attempt
+CREATE TABLE attempt_answers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  attempt_id INT NOT NULL,
+  question_id INT NOT NULL,
+  selected_option CHAR(1),
+  is_correct BOOLEAN,
+  FOREIGN KEY (attempt_id) REFERENCES attempts(attempt_id) ON DELETE CASCADE,
+  FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
+);
+
+-- Insert a sample admin (username: admin, password: admin123) - stored plaintext for demo only
+INSERT INTO admins (username, password, name, email)
+VALUES ('admin', 'admin123', 'Site Admin', 'admin@example.com');
+
+-- Optionally add sample questions
+INSERT INTO questions (question_text, option_a, option_b, option_c, option_d, correct_option)
+VALUES 
+('What is the capital of India?', 'New Delhi', 'Mumbai', 'Kolkata', 'Chennai', 'A'),
+('2 + 2 = ?', '3', '4', '5', '6', 'B'),
+('Which language is used for Android development?', 'Swift', 'Kotlin', 'Ruby', 'C#', 'B');
