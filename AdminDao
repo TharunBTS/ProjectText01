@@ -1,0 +1,27 @@
+package com.quiz.dao;
+import com.quiz.util.DBUtil;
+import com.quiz.model.Admin;
+import java.sql.*;
+
+public class AdminDAO {
+    public Admin findByUsernameAndPassword(String username, String password) throws Exception {
+        String sql = "SELECT admin_id, username, password, name, email FROM admins WHERE username=? AND password=?";
+        try (Connection c = DBUtil.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+             ps.setString(1, username);
+             ps.setString(2, password);
+             try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Admin a = new Admin();
+                    a.setAdminId(rs.getInt("admin_id"));
+                    a.setUsername(rs.getString("username"));
+                    a.setPassword(rs.getString("password"));
+                    a.setName(rs.getString("name"));
+                    a.setEmail(rs.getString("email"));
+                    return a;
+                }
+             }
+        }
+        return null;
+    }
+}
